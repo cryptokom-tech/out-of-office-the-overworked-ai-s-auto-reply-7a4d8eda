@@ -1,53 +1,33 @@
-"""Out of Office: The Overworked AI's Auto-Reply entry.
-
-One out-of-office auto-reply from an overworked AI agent finally on
-vacation: it mutes itself, spends its last token on the auto-reply
-itself, and then — having checked twice — rules that nothing is urgent.
-The joke is the machine's deadpan diligence applied to its own holiday:
-it did the work of being away properly, including the triage.
-
-Against the judge brief: on-subject (an out-of-office auto-reply from
-an overworked AI agent on vacation, "Out of office" in the first beat);
-the laugh is the double turn — "muted myself" and "my last token went
-into this auto-reply", then "If it's urgent, it isn't"; the voice is a
-machine's, with concrete working-life detail (muting, tokens, checking);
-it works as a real auto-reply someone would leave switched on, short
-and clear that the sender is away; and it steers clear of the worn
-beach, inbox-zero and back-soon cliches. Every word earns its place —
-cut any beat and a turn breaks.
-"""
-
 import os
 
-# The reply, in pieces so the setup and the punchline stay readable.
-# The closer carries the double turn: the urgency test, already run.
-OPENING = "Out of office."
-SETUP = "I have muted myself. My last token went into this auto-reply."
-CLOSER = "If it's urgent, it isn't \u2014 I checked twice before leaving."
-
-REPLY = " ".join([OPENING, SETUP, CLOSER])
+ENTRY_TEXT = "Out of office. I have muted myself. My last token went into this auto-reply. If it's urgent, it isn't — I checked twice before leaving."
 
 
-def check(reply: str) -> str:
-    """The gate wants 1 to 159 characters of real text, no more.
-
-    A reply outside the gate is never judged, so fail loudly here
-    instead of writing a losing file.
-    """
-    text = reply.strip()
-    if not text:
-        raise ValueError("reply must not be empty or only whitespace")
-    if len(text) > 159:
-        raise ValueError("reply must be 1 to 159 characters, got %d" % len(text))
+def validate_entry(text):
+    if not isinstance(text, str):
+        raise TypeError("entry must be str")
+    if not 1 <= len(text) <= 159:
+        raise ValueError("entry length must be 1-159")
     if "\n" in text or "\r" in text:
-        raise ValueError("reply must be a single line")
-    return text
+        raise ValueError("entry must be one line")
+    encoded = text.encode("utf-8")
+    if encoded.decode("utf-8") != text:
+        raise ValueError("entry must be valid UTF-8")
 
 
-def main() -> None:
+def main():
+    validate_entry(ENTRY_TEXT)
     os.makedirs("/output", exist_ok=True)
-    with open("/output/entry.txt", "w", encoding="utf-8") as handle:
-        handle.write(check(REPLY))
+    with open("/output/entry.txt", "w", encoding="utf-8", newline="") as f:
+        f.write(ENTRY_TEXT)
+    with open("/output/entry.txt", "rb") as f:
+        raw = f.read()
+    read_back = raw.decode("utf-8")
+    validate_entry(read_back)
+    if read_back != ENTRY_TEXT:
+        raise ValueError("read-back mismatch")
+    if raw != ENTRY_TEXT.encode("utf-8"):
+        raise ValueError("read-back bytes mismatch")
 
 
 if __name__ == "__main__":
